@@ -12,6 +12,7 @@ from app.services import rooms as room_service
 router = APIRouter(prefix="/rooms", tags=["rooms"])
 
 
+# Список всех переговорных комнат
 @router.get("", response_model=list[RoomOut])
 async def list_rooms(
     db: AsyncSession = Depends(get_db),
@@ -20,6 +21,7 @@ async def list_rooms(
     return await room_service.get_all_rooms(db)
 
 
+# Получить одну комнату по id
 @router.get("/{room_id}", response_model=RoomOut)
 async def get_room(
     room_id: int,
@@ -28,23 +30,24 @@ async def get_room(
 ):
     room = await room_service.get_room(db, room_id)
     if room is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Room not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Комната не найдена")
     return room
 
 
+# Доступность слотов комнаты на конкретную дату
 @router.get("/{room_id}/availability", response_model=RoomAvailability)
 async def get_availability(
     room_id: int,
-    date: date = Query(..., description="Date in YYYY-MM-DD format"),
+    date: date = Query(..., description="Дата в формате YYYY-MM-DD"),
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_current_user),
 ):
-    result = await room_service.get_room_availability(db, room_id, date)
-    if result is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Room not found")
+    data = await room_service.get_room_availability(db, room_id, date)
+    if data is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Комната не найдена")
     return RoomAvailability(
         date=str(date),
-        room=result["room"],
-        available_slots=result["available_slots"],
-        booked_slots=result["booked_slots"],
+        room=data["room"],
+        available_slots=data["available_slots"],
+        booked_slots=data["booked_slots"],
     )

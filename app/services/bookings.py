@@ -12,27 +12,30 @@ from app.schemas.booking import BookingCreate
 
 
 async def create_booking(
-    db: AsyncSession, data: BookingCreate, current_user: User
+    db: AsyncSession, data: BookingCreate, user: User
 ) -> Booking:
-    room_result = await db.execute(select(Room).where(Room.id == data.room_id))
-    room = room_result.scalar_one_or_none()
+    # Проверяем что комната существует
+    res = await db.execute(select(Room).where(Room.id == data.room_id))
+    room = res.scalar_one_or_none()
     if room is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Room not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Комната не найдена")
 
-    slot_result = await db.execute(
+    # Проверяем что слот принадлежит этой комнате
+    res = await db.execute(
         select(TimeSlot).where(
             TimeSlot.id == data.time_slot_id,
             TimeSlot.room_id == data.room_id,
         )
     )
-    slot = slot_result.scalar_one_or_none()
+    slot = res.scalar_one_or_none()
     if slot is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Time slot not found for this room",
+            detail="Временной слот не найден для данной комнаты",
         )
 
-    conflict_result = await db.execute(
+    # Проверяем что слот не занят на эту дату
+    res = await db.execute(
         select(Booking).where(
             and_(
                 Booking.room_id == data.room_id,
@@ -42,14 +45,14 @@ async def create_booking(
             )
         )
     )
-    if conflict_result.scalar_one_or_none() is not None:
+    if res.scalar_one_or_none() is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="This slot is already booked for the selected date",
+            detail="Этот слот уже забронирован на выбранную дату",
         )
 
     booking = Booking(
-        user_id=current_user.id,
+        user_id=user.id,
         room_id=data.room_id,
         time_slot_id=data.time_slot_id,
         date=data.date,
@@ -59,7 +62,8 @@ async def create_booking(
     await db.commit()
     await db.refresh(booking)
 
-    result = await db.execute(
+    # Загружаем связанные данные для ответа
+    res = await db.execute(
         select(Booking)
         .options(
             selectinload(Booking.time_slot),
@@ -68,24 +72,26 @@ async def create_booking(
         )
         .where(Booking.id == booking.id)
     )
-    return result.scalar_one()
+    return res.scalar_one()
 
 
-async def get_my_bookings(db: AsyncSession, current_user: User) -> list[Booking]:
-    result = await db.execute(
+# Мои бронирования — только текущего пользователя
+async def get_my_bookings(db: AsyncSession, user: User) -> list[Booking]:
+    res = await db.execute(
         select(Booking)
         .options(
             selectinload(Booking.time_slot),
             selectinload(Booking.room),
         )
-        .where(Booking.user_id == current_user.id)
+        .where(Booking.user_id == user.id)
         .order_by(Booking.date.desc(), Booking.id.desc())
     )
-    return result.scalars().all()
+    return res.scalars().all()
 
 
+# Все бронирования — для администратора
 async def get_all_bookings(db: AsyncSession) -> list[Booking]:
-    result = await db.execute(
+    res = await db.execute(
         select(Booking)
         .options(
             selectinload(Booking.time_slot),
@@ -94,32 +100,33 @@ async def get_all_bookings(db: AsyncSession) -> list[Booking]:
         )
         .order_by(Booking.date.desc(), Booking.id.desc())
     )
-    return result.scalars().all()
+    return res.scalars().all()
 
 
 async def cancel_booking(
-    db: AsyncSession, booking_id: int, current_user: User
+    db: AsyncSession, booking_id: int, user: User
 ) -> Booking:
-    result = await db.execute(
+    res = await db.execute(
         select(Booking)
         .options(selectinload(Booking.time_slot), selectinload(Booking.room))
         .where(Booking.id == booking_id)
     )
-    booking = result.scalar_one_or_none()
+    booking = res.scalar_one_or_none()
 
     if booking is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Бронирование не найдено")
 
-    if current_user.role != UserRole.admin and booking.user_id != current_user.id:
+    # Сотрудник может отменить только своё бронирование
+    if user.role != UserRole.admin and booking.user_id != user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only cancel your own bookings",
+            detail="Можно отменять только свои бронирования",
         )
 
     if booking.status == BookingStatus.cancelled:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Booking is already cancelled",
+            detail="Бронирование уже отменено",
         )
 
     booking.status = BookingStatus.cancelled

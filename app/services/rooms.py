@@ -8,40 +8,44 @@ from app.models.booking import Booking, BookingStatus
 from app.models.room import Room, TimeSlot
 
 
+# Получить все комнаты вместе со слотами
 async def get_all_rooms(db: AsyncSession) -> list[Room]:
-    result = await db.execute(
+    res = await db.execute(
         select(Room).options(selectinload(Room.time_slots)).order_by(Room.id)
     )
-    return result.scalars().all()
+    return res.scalars().all()
 
 
+# Получить одну комнату по id
 async def get_room(db: AsyncSession, room_id: int) -> Room | None:
-    result = await db.execute(
+    res = await db.execute(
         select(Room)
         .options(selectinload(Room.time_slots))
         .where(Room.id == room_id)
     )
-    return result.scalar_one_or_none()
+    return res.scalar_one_or_none()
 
 
+# Проверить доступность слотов комнаты на дату
 async def get_room_availability(
-    db: AsyncSession, room_id: int, check_date: date
+    db: AsyncSession, room_id: int, target_date: date
 ) -> dict:
     room = await get_room(db, room_id)
     if room is None:
         return None
 
-    booked_result = await db.execute(
+    # Смотрим какие слоты уже заняты на эту дату
+    res = await db.execute(
         select(Booking.time_slot_id)
         .where(
             Booking.room_id == room_id,
-            Booking.date == check_date,
+            Booking.date == target_date,
             Booking.status == BookingStatus.active,
         )
     )
-    booked_slot_ids = set(booked_result.scalars().all())
+    busy_ids = set(res.scalars().all())
 
-    available = [s for s in room.time_slots if s.id not in booked_slot_ids]
-    booked = [s for s in room.time_slots if s.id in booked_slot_ids]
+    free_slots = [s for s in room.time_slots if s.id not in busy_ids]
+    busy_slots = [s for s in room.time_slots if s.id in busy_ids]
 
-    return {"room": room, "available_slots": available, "booked_slots": booked}
+    return {"room": room, "available_slots": free_slots, "booked_slots": busy_slots}
