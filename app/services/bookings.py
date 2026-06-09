@@ -95,7 +95,7 @@ async def get_all_bookings(db: AsyncSession) -> list[Booking]:
         select(Booking)
         .options(
             selectinload(Booking.time_slot),
-            selectinload(Booking.room),
+            selectinload(Booking.room).selectinload(Room.time_slots),
             selectinload(Booking.user),
         )
         .order_by(Booking.date.desc(), Booking.id.desc())

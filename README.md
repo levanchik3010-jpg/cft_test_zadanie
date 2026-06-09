@@ -1,192 +1,141 @@
 # Сервис бронирования переговорных комнат
 
-REST API на FastAPI для управления бронированием переговорных комнат в коворкинге.
+Сервис для бронирования переговорных комнат в коворкинге. Сотрудники могут смотреть доступность комнат и создавать бронирования, администраторы — управлять всеми бронированиями.
 
-## Стек технологий
+## Технологии
 
-- **Python 3.11+**, **FastAPI**, **SQLAlchemy 2.0** (async)
-- **PostgreSQL** (через asyncpg), **JWT** аутентификация
-- **Poetry** для управления зависимостями, **pytest** для тестов
-- **Docker** + **docker-compose**
+- Python 3.11, FastAPI
+- PostgreSQL + SQLAlchemy (async)
+- JWT авторизация
+- Poetry, Docker
 
 ---
 
-## Быстрый запуск через Docker Compose (рекомендуется)
+## Как запустить
+
+### Через Docker Compose (самый простой способ)
+
+Нужен только Docker.
 
 ```bash
-# Клонировать репозиторий
-git clone <repo-url> && cd booking-service
-
-# Запустить сервис + базу данных
+git clone <ссылка на репозиторий>
+cd cft_test_zadanie
 docker-compose up --build
-
-# Сервис доступен на http://localhost:8000
-# Swagger UI:          http://localhost:8000/docs
 ```
 
-При первом запуске автоматически создаются таблицы и тестовые данные:
-
-| Пользователь | Пароль   | Роль       |
-|-------------|----------|------------|
-| `admin`     | `admin123` | Администратор |
-| `employee1` | `pass123`  | Сотрудник  |
-| `employee2` | `pass123`  | Сотрудник  |
+Сервис поднимется на http://localhost:8000 вместе с базой данных.
 
 ---
 
-## Запуск только приложения через Docker (без docker-compose)
+### Локально
+
+Нужен Python 3.11+, Poetry и PostgreSQL.
 
 ```bash
-docker build -t booking-service .
-
-docker run -p 8000:8000 \
-  -e DATABASE_URL="postgresql+asyncpg://user:pass@host:5432/dbname" \
-  -e SECRET_KEY="your-secret-key" \
-  booking-service
-```
-
----
-
-## Локальный запуск
-
-### Требования
-- Python 3.11+
-- Poetry (`pip install poetry`)
-- PostgreSQL (локально или через Docker)
-
-```bash
-# Установить зависимости
+# Устанавливаем зависимости
 poetry install
 
-# Создать .env из шаблона и настроить DATABASE_URL
+# Копируем .env и прописываем подключение к базе
 cp .env.example .env
 
-# Запустить только PostgreSQL
-docker run -d --name pg -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=booking_db -p 5432:5432 postgres:16-alpine
-
-# Запустить сервер
+# Запускаем
 poetry run uvicorn app.main:app --reload --port 8000
 ```
 
 ---
 
-## Запуск тестов
+### Тесты
 
 ```bash
-# Установить dev-зависимости (уже включены в poetry install)
-poetry install
-
-# Все тесты
 poetry run pytest -v
-
-# С отчётом покрытия
-poetry run pytest --cov=app --cov-report=term-missing
 ```
 
-Тесты используют SQLite in-memory и не требуют PostgreSQL.
+Тесты работают на SQLite, PostgreSQL не нужен.
 
 ---
 
-## API Endpoints
+## Тестовые пользователи
 
-### Аутентификация
+При первом запуске автоматически создаются:
+
+| Логин | Пароль | Роль |
+|-------|--------|------|
+| admin | admin123 | Администратор |
+| employee1 | pass123 | Сотрудник |
+| employee2 | pass123 | Сотрудник |
+
+---
+
+## API
+
+### Авторизация
 
 | Метод | Путь | Описание |
 |-------|------|----------|
-| `POST` | `/api/v1/auth/register` | Регистрация нового пользователя |
-| `POST` | `/api/v1/auth/login` | Получение JWT-токена |
+| POST | /api/v1/auth/register | Регистрация |
+| POST | /api/v1/auth/login | Получить JWT токен |
 
-### Комнаты *(требует авторизации)*
+### Комнаты
 
 | Метод | Путь | Описание |
 |-------|------|----------|
-| `GET` | `/api/v1/rooms` | Список всех переговорных |
-| `GET` | `/api/v1/rooms/{id}` | Информация о комнате |
-| `GET` | `/api/v1/rooms/{id}/availability?date=YYYY-MM-DD` | Свободные/занятые слоты на дату |
+| GET | /api/v1/rooms | Список комнат |
+| GET | /api/v1/rooms/{id} | Информация о комнате |
+| GET | /api/v1/rooms/{id}/availability?date=YYYY-MM-DD | Свободные слоты на дату |
 
-### Бронирования *(требует авторизации)*
+### Бронирования
 
 | Метод | Путь | Описание | Доступ |
 |-------|------|----------|--------|
-| `POST` | `/api/v1/bookings` | Создать бронирование | Все пользователи |
-| `GET` | `/api/v1/bookings/my` | Мои бронирования | Все пользователи |
-| `GET` | `/api/v1/bookings` | Все бронирования | Только администратор |
-| `DELETE` | `/api/v1/bookings/{id}` | Отменить бронирование | Своё — все; чужое — только admin |
+| POST | /api/v1/bookings | Создать бронирование | Все |
+| GET | /api/v1/bookings/my | Мои бронирования | Все |
+| GET | /api/v1/bookings | Все бронирования | Только admin |
+| DELETE | /api/v1/bookings/{id} | Отменить бронирование | Своё — все, чужое — только admin |
 
 ---
 
-## Примеры запросов
+## Примеры
 
-### 1. Получить токен
-
+**Получить токен:**
 ```bash
 curl -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username": "employee1", "password": "pass123"}'
 ```
-
 ```json
 {"access_token": "eyJ...", "token_type": "bearer"}
 ```
 
-### 2. Посмотреть доступность комнаты на дату
-
+**Посмотреть свободные слоты:**
 ```bash
-curl http://localhost:8000/api/v1/rooms/1/availability?date=2025-12-15 \
+curl http://localhost:8000/api/v1/rooms/1/availability?date=2025-12-20 \
   -H "Authorization: Bearer eyJ..."
 ```
-
 ```json
 {
-  "date": "2025-12-15",
-  "room": {"id": 1, "name": "Переговорная «Альфа»", ...},
-  "available_slots": [
-    {"id": 1, "label": "09:00–11:00", "start_time": "09:00:00", "end_time": "11:00:00"},
-    ...
-  ],
+  "date": "2025-12-20",
+  "available_slots": [{"id": 1, "label": "09:00–11:00"}, ...],
   "booked_slots": []
 }
 ```
 
-### 3. Создать бронирование
-
+**Забронировать комнату:**
 ```bash
 curl -X POST http://localhost:8000/api/v1/bookings \
   -H "Authorization: Bearer eyJ..." \
   -H "Content-Type: application/json" \
-  -d '{"room_id": 1, "time_slot_id": 1, "date": "2025-12-15"}'
+  -d '{"room_id": 1, "time_slot_id": 1, "date": "2025-12-20"}'
 ```
-
 ```json
-{
-  "id": 1,
-  "room_id": 1,
-  "time_slot_id": 1,
-  "date": "2025-12-15",
-  "status": "active",
-  "user_id": 2,
-  "created_at": "2025-12-14T10:00:00"
-}
+{"id": 1, "status": "active", "date": "2025-12-20", ...}
 ```
 
-### 4. Отменить бронирование
-
+**Отменить бронирование:**
 ```bash
 curl -X DELETE http://localhost:8000/api/v1/bookings/1 \
   -H "Authorization: Bearer eyJ..."
 ```
 
-### 5. Список всех бронирований (администратор)
-
-```bash
-curl http://localhost:8000/api/v1/bookings \
-  -H "Authorization: Bearer <admin-token>"
-```
-
 ---
 
-## Интерактивная документация
-
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
+Swagger UI доступен по адресу http://localhost:8000/docs
