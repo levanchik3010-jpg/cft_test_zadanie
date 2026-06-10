@@ -1,19 +1,10 @@
 # Сервис бронирования переговорных комнат
 
-Сервис для бронирования переговорных комнат в коворкинге. Сотрудники могут смотреть доступность комнат и создавать бронирования, администраторы — управлять всеми бронированиями.
-
-## Технологии
-
-- Python 3.11, FastAPI
-- PostgreSQL + SQLAlchemy (async)
-- JWT авторизация
-- Poetry, Docker
-
----
+Сервис для бронирования переговорных комнат в коворкинге. Сотрудники могут смотреть доступность комнат и создавать бронирования, администраторы управлять всеми бронированиями.
 
 ## Как запустить
 
-### Через Docker Compose (самый простой способ)
+### Через Docker Compose
 
 Нужен только Docker.
 
@@ -23,22 +14,15 @@ cd cft_test_zadanie
 docker-compose up --build
 ```
 
-Сервис поднимется на http://localhost:8000 вместе с базой данных.
-
 ---
 
 ### Локально
 
-Нужен Python 3.11+, Poetry и PostgreSQL.
-
 ```bash
-# Устанавливаем зависимости
 poetry install
 
-# Копируем .env и прописываем подключение к базе
 cp .env.example .env
 
-# Запускаем
 poetry run uvicorn app.main:app --reload --port 8000
 ```
 
@@ -49,8 +33,6 @@ poetry run uvicorn app.main:app --reload --port 8000
 ```bash
 poetry run pytest -v
 ```
-
-Тесты работают на SQLite, PostgreSQL не нужен.
 
 ---
 
@@ -85,12 +67,12 @@ poetry run pytest -v
 
 ### Бронирования
 
-| Метод | Путь | Описание | Доступ |
-|-------|------|----------|--------|
-| POST | /api/v1/bookings | Создать бронирование | Все |
-| GET | /api/v1/bookings/my | Мои бронирования | Все |
-| GET | /api/v1/bookings | Все бронирования | Только admin |
-| DELETE | /api/v1/bookings/{id} | Отменить бронирование | Своё — все, чужое — только admin |
+| Метод | Путь | Описание | Доступ                           |
+|-------|------|----------|----------------------------------|
+| POST | /api/v1/bookings | Создать бронирование | Все                              |
+| GET | /api/v1/bookings/my | Мои бронирования | Все                              |
+| GET | /api/v1/bookings | Все бронирования | Только admin                     |
+| DELETE | /api/v1/bookings/{id} | Отменить бронирование | Своё - все, чужое - только admin |
 
 ---
 
@@ -108,12 +90,12 @@ curl -X POST http://localhost:8000/api/v1/auth/login \
 
 **Посмотреть свободные слоты:**
 ```bash
-curl http://localhost:8000/api/v1/rooms/1/availability?date=2025-12-20 \
+curl http://localhost:8000/api/v1/rooms/1/availability?date=2026-12-20 \
   -H "Authorization: Bearer eyJ..."
 ```
 ```json
 {
-  "date": "2025-12-20",
+  "date": "2026-12-20",
   "available_slots": [{"id": 1, "label": "09:00–11:00"}, ...],
   "booked_slots": []
 }
@@ -124,10 +106,10 @@ curl http://localhost:8000/api/v1/rooms/1/availability?date=2025-12-20 \
 curl -X POST http://localhost:8000/api/v1/bookings \
   -H "Authorization: Bearer eyJ..." \
   -H "Content-Type: application/json" \
-  -d '{"room_id": 1, "time_slot_id": 1, "date": "2025-12-20"}'
+  -d '{"room_id": 1, "time_slot_id": 1, "date": "2026-12-20"}'
 ```
 ```json
-{"id": 1, "status": "active", "date": "2025-12-20", ...}
+{"id": 1, "status": "active", "date": "2026-12-20", ...}
 ```
 
 **Отменить бронирование:**
@@ -138,4 +120,4 @@ curl -X DELETE http://localhost:8000/api/v1/bookings/1 \
 
 ---
 
-Swagger UI доступен по адресу http://localhost:8000/docs
+Документация API доступна по адресу http://localhost:8000/docs

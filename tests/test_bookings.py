@@ -9,7 +9,7 @@ async def test_create_booking_success(client: AsyncClient, employee_user, room_w
     slot_id = room_with_slots.time_slots[0].id
     resp = await client.post(
         "/api/v1/bookings",
-        json={"room_id": room_with_slots.id, "time_slot_id": slot_id, "date": "2025-12-15"},
+        json={"room_id": room_with_slots.id, "time_slot_id": slot_id, "date": "2026-12-15"},
         headers=auth_headers(employee_user),
     )
     assert resp.status_code == 201
@@ -22,7 +22,7 @@ async def test_create_booking_success(client: AsyncClient, employee_user, room_w
 @pytest.mark.asyncio
 async def test_create_booking_conflict(client: AsyncClient, employee_user, employee_user2, room_with_slots):
     slot_id = room_with_slots.time_slots[0].id
-    payload = {"room_id": room_with_slots.id, "time_slot_id": slot_id, "date": "2025-12-16"}
+    payload = {"room_id": room_with_slots.id, "time_slot_id": slot_id, "date": "2026-12-16"}
 
     resp1 = await client.post("/api/v1/bookings", json=payload, headers=auth_headers(employee_user))
     assert resp1.status_code == 201
@@ -35,7 +35,7 @@ async def test_create_booking_conflict(client: AsyncClient, employee_user, emplo
 async def test_create_booking_wrong_slot(client: AsyncClient, employee_user, room_with_slots):
     resp = await client.post(
         "/api/v1/bookings",
-        json={"room_id": room_with_slots.id, "time_slot_id": 99999, "date": "2025-12-15"},
+        json={"room_id": room_with_slots.id, "time_slot_id": 99999, "date": "2026-12-15"},
         headers=auth_headers(employee_user),
     )
     assert resp.status_code == 404
@@ -46,7 +46,7 @@ async def test_my_bookings(client: AsyncClient, employee_user, employee_user2, r
     slot_id = room_with_slots.time_slots[0].id
     await client.post(
         "/api/v1/bookings",
-        json={"room_id": room_with_slots.id, "time_slot_id": slot_id, "date": "2025-12-20"},
+        json={"room_id": room_with_slots.id, "time_slot_id": slot_id, "date": "2026-12-20"},
         headers=auth_headers(employee_user),
     )
 
@@ -75,7 +75,7 @@ async def test_cancel_own_booking(client: AsyncClient, employee_user, room_with_
     slot_id = room_with_slots.time_slots[1].id
     create_resp = await client.post(
         "/api/v1/bookings",
-        json={"room_id": room_with_slots.id, "time_slot_id": slot_id, "date": "2025-12-22"},
+        json={"room_id": room_with_slots.id, "time_slot_id": slot_id, "date": "2026-12-22"},
         headers=auth_headers(employee_user),
     )
     booking_id = create_resp.json()["id"]
@@ -92,7 +92,7 @@ async def test_cancel_others_booking_forbidden(
     slot_id = room_with_slots.time_slots[2].id
     create_resp = await client.post(
         "/api/v1/bookings",
-        json={"room_id": room_with_slots.id, "time_slot_id": slot_id, "date": "2025-12-23"},
+        json={"room_id": room_with_slots.id, "time_slot_id": slot_id, "date": "2026-12-23"},
         headers=auth_headers(employee_user),
     )
     booking_id = create_resp.json()["id"]
@@ -108,7 +108,7 @@ async def test_admin_cancel_any_booking(
     slot_id = room_with_slots.time_slots[0].id
     create_resp = await client.post(
         "/api/v1/bookings",
-        json={"room_id": room_with_slots.id, "time_slot_id": slot_id, "date": "2025-12-24"},
+        json={"room_id": room_with_slots.id, "time_slot_id": slot_id, "date": "2026-12-24"},
         headers=auth_headers(employee_user),
     )
     booking_id = create_resp.json()["id"]
@@ -123,7 +123,7 @@ async def test_cancel_already_cancelled(client: AsyncClient, employee_user, room
     slot_id = room_with_slots.time_slots[1].id
     create_resp = await client.post(
         "/api/v1/bookings",
-        json={"room_id": room_with_slots.id, "time_slot_id": slot_id, "date": "2025-12-25"},
+        json={"room_id": room_with_slots.id, "time_slot_id": slot_id, "date": "2026-12-25"},
         headers=auth_headers(employee_user),
     )
     booking_id = create_resp.json()["id"]
@@ -138,7 +138,7 @@ async def test_cancelled_slot_becomes_available_again(
     client: AsyncClient, employee_user, employee_user2, room_with_slots
 ):
     slot_id = room_with_slots.time_slots[0].id
-    payload = {"room_id": room_with_slots.id, "time_slot_id": slot_id, "date": "2025-12-26"}
+    payload = {"room_id": room_with_slots.id, "time_slot_id": slot_id, "date": "2026-12-26"}
 
     create_resp = await client.post("/api/v1/bookings", json=payload, headers=auth_headers(employee_user))
     booking_id = create_resp.json()["id"]

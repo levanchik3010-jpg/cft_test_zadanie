@@ -31,7 +31,7 @@ async def test_get_room_not_found(client: AsyncClient, employee_user):
 async def test_room_availability_all_free(client: AsyncClient, employee_user, room_with_slots):
     resp = await client.get(
         f"/api/v1/rooms/{room_with_slots.id}/availability",
-        params={"date": "2025-12-01"},
+        params={"date": "2026-12-01"},
         headers=auth_headers(employee_user),
     )
     assert resp.status_code == 200
@@ -47,13 +47,13 @@ async def test_room_availability_after_booking(
     slot_id = room_with_slots.time_slots[0].id
     await client.post(
         "/api/v1/bookings",
-        json={"room_id": room_with_slots.id, "time_slot_id": slot_id, "date": "2025-12-01"},
+        json={"room_id": room_with_slots.id, "time_slot_id": slot_id, "date": "2026-12-01"},
         headers=auth_headers(employee_user),
     )
 
     resp = await client.get(
         f"/api/v1/rooms/{room_with_slots.id}/availability",
-        params={"date": "2025-12-01"},
+        params={"date": "2026-12-01"},
         headers=auth_headers(employee_user),
     )
     assert resp.status_code == 200
