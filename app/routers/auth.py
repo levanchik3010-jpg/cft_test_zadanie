@@ -8,11 +8,11 @@ from app.schemas.auth import LoginRequest, Token
 from app.schemas.user import UserCreate, UserOut
 from app.services.auth import create_access_token, get_password_hash, verify_password
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["авторизация"])
 
 
 # Вход — возвращает JWT токен
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=Token, summary="Войти и получить токен")
 async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
     res = await db.execute(select(User).where(User.username == data.username))
     user = res.scalar_one_or_none()
@@ -29,7 +29,7 @@ async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
 
 
 # Регистрация нового пользователя
-@router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED, summary="Зарегистрировать пользователя")
 async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):
     # Проверяем что логин не занят
     res = await db.execute(select(User).where(User.username == data.username))

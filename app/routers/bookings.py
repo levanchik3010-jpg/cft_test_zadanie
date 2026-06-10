@@ -7,11 +7,11 @@ from app.models.user import User
 from app.schemas.booking import BookingCreate, BookingOut, BookingOutDetailed
 from app.services import bookings as booking_service
 
-router = APIRouter(prefix="/bookings", tags=["bookings"])
+router = APIRouter(prefix="/bookings", tags=["бронирования"])
 
 
 # Создать бронирование
-@router.post("", response_model=BookingOut, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=BookingOut, status_code=status.HTTP_201_CREATED, summary="Создать бронирование")
 async def create_booking(
     data: BookingCreate,
     db: AsyncSession = Depends(get_db),
@@ -21,7 +21,7 @@ async def create_booking(
 
 
 # Мои бронирования
-@router.get("/my", response_model=list[BookingOut])
+@router.get("/my", response_model=list[BookingOut], summary="Мои бронирования")
 async def my_bookings(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
@@ -30,7 +30,7 @@ async def my_bookings(
 
 
 # Все бронирования — только для администратора
-@router.get("", response_model=list[BookingOutDetailed])
+@router.get("", response_model=list[BookingOutDetailed], summary="Все бронирования (только админ)")
 async def all_bookings(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(require_admin),
@@ -39,7 +39,7 @@ async def all_bookings(
 
 
 # Отменить бронирование
-@router.delete("/{booking_id}", response_model=BookingOut)
+@router.delete("/{booking_id}", response_model=BookingOut, summary="Отменить бронирование")
 async def cancel_booking(
     booking_id: int,
     db: AsyncSession = Depends(get_db),

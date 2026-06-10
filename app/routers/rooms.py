@@ -9,11 +9,11 @@ from app.models.user import User
 from app.schemas.room import RoomAvailability, RoomOut
 from app.services import rooms as room_service
 
-router = APIRouter(prefix="/rooms", tags=["rooms"])
+router = APIRouter(prefix="/rooms", tags=["комнаты"])
 
 
 # Список всех переговорных комнат
-@router.get("", response_model=list[RoomOut])
+@router.get("", response_model=list[RoomOut], summary="Список всех комнат")
 async def list_rooms(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_current_user),
@@ -22,7 +22,7 @@ async def list_rooms(
 
 
 # Получить одну комнату по id
-@router.get("/{room_id}", response_model=RoomOut)
+@router.get("/{room_id}", response_model=RoomOut, summary="Информация о комнате")
 async def get_room(
     room_id: int,
     db: AsyncSession = Depends(get_db),
@@ -35,7 +35,7 @@ async def get_room(
 
 
 # Доступность слотов комнаты на конкретную дату
-@router.get("/{room_id}/availability", response_model=RoomAvailability)
+@router.get("/{room_id}/availability", response_model=RoomAvailability, summary="Свободные слоты на дату")
 async def get_availability(
     room_id: int,
     date: date = Query(..., description="Дата в формате YYYY-MM-DD"),

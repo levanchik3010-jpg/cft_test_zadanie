@@ -13,8 +13,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Booking Service",
-    description="Сервис бронирования переговорных комнат",
+    title="Сервис бронирования переговорных комнат",
+    description="API для бронированием переговорных комнат в коворкинге",
     version="1.0.0",
     lifespan=lifespan,
 )
@@ -24,6 +24,6 @@ app.include_router(rooms.router, prefix="/api/v1")
 app.include_router(bookings.router, prefix="/api/v1")
 
 
-@app.get("/health", tags=["health"])
+@app.get("/health", tags=["проверка"], summary="Проверка работоспособности")
 async def health():
     return {"status": "ok"}
