@@ -23,12 +23,7 @@ docker-compose up --build
 Сначала запустить базу данных:
 
 ```bash
-docker run -d --name booking-db ^
-  -e POSTGRES_USER=postgres ^
-  -e POSTGRES_PASSWORD=postgres ^
-  -e POSTGRES_DB=booking_db ^
-  -p 5432:5432 ^
-  postgres:16-alpine
+docker run -d --name booking-db   -e POSTGRES_USER=postgres   -e POSTGRES_PASSWORD=postgres   -e POSTGRES_DB=booking_db   -p 5432:5432   postgres:16-alpine
 ```
 
 Затем собрать и запустить приложение:
@@ -36,12 +31,7 @@ docker run -d --name booking-db ^
 ```bash
 docker build -t booking-service .
 
-docker run -d --name booking-app ^
-  -e DATABASE_URL=postgresql+psycopg://postgres:postgres@host.docker.internal:5432/booking_db ^
-  -e SECRET_KEY=super-secret-key ^
-  -e ACCESS_TOKEN_EXPIRE_MINUTES=30 ^
-  -p 8000:8000 ^
-  booking-service
+docker run -d --name booking-app   -e DATABASE_URL=postgresql+psycopg://postgres:postgres@host.docker.internal:5432/booking_db   -e SECRET_KEY=super-secret-key   -e ACCESS_TOKEN_EXPIRE_MINUTES=30   -p 8000:8000   booking-service
 ```
 
 Сервис поднимется на http://localhost:8000
